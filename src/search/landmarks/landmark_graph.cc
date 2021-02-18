@@ -204,9 +204,9 @@ LandmarkNode &LandmarkGraph::replace_disjunctive_by_simple_landmark(const FactPa
     LandmarkNode &node = get_disjunctive_landmark(lm);
     node.disjunctive = false;
     for (const FactPair &lm_fact : node.facts)
-        // TODO: shouldn't this decrease num_disjunctive_landmarks?
         disjunctive_landmarks_to_nodes.erase(lm_fact);
     simple_landmarks_to_nodes.emplace(lm, &node);
+    --num_disjunctive_landmarks;
     return node;
 }
 
