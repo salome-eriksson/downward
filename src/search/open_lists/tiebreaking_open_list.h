@@ -8,8 +8,15 @@
 namespace tiebreaking_open_list {
 class TieBreakingOpenListFactory : public OpenListFactory {
     plugins::Options options;
+    int size;
+    std::vector<std::shared_ptr<Evaluator>> evaluators;
+    bool allow_unsafe_pruning;
 public:
-    explicit TieBreakingOpenListFactory(const plugins::Options &options);
+    explicit TieBreakingOpenListFactory(const plugins::Options &opts);
+    explicit TieBreakingOpenListFactory(
+            int size,
+            std::vector<std::shared_ptr<Evaluator>> evaluators,
+            bool allow_unsafe_pruning);
     virtual ~TieBreakingOpenListFactory() override = default;
 
     virtual std::unique_ptr<StateOpenList> create_state_open_list() override;
