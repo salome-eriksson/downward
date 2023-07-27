@@ -74,6 +74,7 @@ fast_downward_plugin(
         state_id
         state_registry
         task_id
+        task_independent_evaluator
         task_proxy
 
     DEPENDS CAUSAL_GRAPH INT_HASH_SET INT_PACKER ORDERED_SET SEGMENTED_VECTOR SUBSCRIBER SUCCESSOR_GENERATOR TASK_PROPERTIES
