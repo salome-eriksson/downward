@@ -23,6 +23,20 @@ public:
                                   std::shared_ptr<AbstractTask> task);
     virtual ~LandmarkCutHeuristic() override;
 };
+
+class TaskIndependentLandmarkCutHeuristic : public TaskIndependentHeuristic {
+private:
+    std::string unparsed_config;
+    utils::LogProxy log;
+    bool cache_evaluator_values;
+public:
+    explicit TaskIndependentLandmarkCutHeuristic(std::string unparsed_config,
+                                                 utils::LogProxy log,
+                                                 bool cache_evaluator_values);
+    virtual std::shared_ptr<Evaluator> create_task_specific(std::shared_ptr<AbstractTask> &task) override;
+
+    virtual ~TaskIndependentLandmarkCutHeuristic()  override;
+};
 }
 
 #endif

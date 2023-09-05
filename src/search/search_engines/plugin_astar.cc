@@ -8,17 +8,17 @@
 using namespace std;
 
 namespace plugin_astar {
-class AStarSearchFeature : public plugins::TypedFeature<SearchEngine, eager_search::EagerSearch> {
+class TaskIndependentAStarSearchFeature : public plugins::TypedFeature<TaskIndependentSearchEngine, eager_search::TaskIndependentEagerSearch> {
 public:
-    AStarSearchFeature() : TypedFeature("astar") {
+    TaskIndependentAStarSearchFeature() : TypedFeature("astar") {
         document_title("A* search (eager)");
         document_synopsis(
             "A* is a special case of eager best first search that uses g+h "
             "as f-function. "
             "We break ties using the evaluator. Closed nodes are re-opened.");
 
-        add_option<shared_ptr<Evaluator>>("eval", "evaluator for h-value");
-        add_option<shared_ptr<Evaluator>>(
+        add_option<shared_ptr<TaskIndependentEvaluator>>("eval", "evaluator for h-value");
+        add_option<shared_ptr<TaskIndependentEvaluator>>(
             "lazy_evaluator",
             "An evaluator that re-evaluates a state before it is expanded.",
             plugins::ArgumentInfo::NO_DEFAULT);
@@ -40,24 +40,24 @@ public:
             "```\n", true);
     }
 
-    virtual shared_ptr<eager_search::EagerSearch> create_component(const plugins::Options &opts, const utils::Context &) const override {
+    virtual shared_ptr<eager_search::TaskIndependentEagerSearch> create_component(const plugins::Options &opts, const utils::Context &) const override {
         utils::Verbosity _verbosity = opts.get<utils::Verbosity>("verbosity");
-        auto temp = search_common::create_astar_open_list_factory_and_f_eval(_verbosity,
-                                                                             opts.get<shared_ptr<Evaluator>>("eval"));
-        vector<shared_ptr<Evaluator>> preferred_list;
-        return make_shared<eager_search::EagerSearch>(_verbosity,
-                                                      opts.get<OperatorCost>("cost_type"),
-                                                      opts.get<double>("max_time"),
-                                                      opts.get<int>("bound"),
-                                                      true,
-                                                      temp.first->create_state_open_list(),
-                                                      preferred_list,
-                                                      opts.get<shared_ptr<PruningMethod>>("pruning"),
-                                                      temp.second,
-                                                      nullptr,
-                                                      opts.get_unparsed_config());
+        auto temp = search_common::create_task_independent_astar_open_list_factory_and_f_eval(_verbosity,
+                                                                                              opts.get<shared_ptr<TaskIndependentEvaluator>>("eval"));
+        vector<shared_ptr<TaskIndependentEvaluator>> preferred_list;
+        return make_shared<eager_search::TaskIndependentEagerSearch>(_verbosity,
+                                                                     opts.get<OperatorCost>("cost_type"),
+                                                                     opts.get<double>("max_time"),
+                                                                     opts.get<int>("bound"),
+                                                                     true,
+                                                                     temp.first->create_task_independent_state_open_list(),
+                                                                     preferred_list,
+                                                                     opts.get<shared_ptr<PruningMethod>>("pruning"),
+                                                                     temp.second,
+                                                                     nullptr,
+                                                                     opts.get_unparsed_config());
     }
 };
 
-static plugins::FeaturePlugin<AStarSearchFeature> _plugin;
+static plugins::FeaturePlugin<TaskIndependentAStarSearchFeature> _plugin;
 }

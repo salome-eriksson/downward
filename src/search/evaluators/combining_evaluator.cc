@@ -75,3 +75,13 @@ void add_combining_evaluator_options_to_feature(plugins::Feature &feature) {
     add_evaluator_options_to_feature(feature);
 }
 }
+
+TaskIndependentCombiningEvaluator::TaskIndependentCombiningEvaluator(utils::LogProxy log,
+                                                                     std::vector<std::shared_ptr<TaskIndependentEvaluator>> subevaluators,
+                                                                     string unparsed_config,
+                                                                     bool use_for_reporting_minima,
+                                                                     bool use_for_boosting,
+                                                                     bool use_for_counting_evaluations)
+    : TaskIndependentEvaluator(log, unparsed_config, use_for_reporting_minima, use_for_boosting, use_for_counting_evaluations),
+      subevaluators(subevaluators) {
+}

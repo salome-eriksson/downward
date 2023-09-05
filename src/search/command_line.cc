@@ -15,6 +15,9 @@
 #include <sstream>
 #include <vector>
 
+
+#include "task_independent_search_engine.h"
+
 using namespace std;
 
 NO_RETURN
@@ -80,19 +83,19 @@ static vector<string> replace_old_style_predefinitions(const vector<string> &arg
     return new_args;
 }
 
-static shared_ptr<SearchEngine> parse_cmd_line_aux(const vector<string> &args) {
+static shared_ptr<TaskIndependentSearchEngine> parse_cmd_line_aux(const vector<string> &args) {
     string plan_filename = "sas_plan";
     int num_previously_generated_plans = 0;
     bool is_part_of_anytime_portfolio = false;
 
-    using SearchPtr = shared_ptr<SearchEngine>;
-    SearchPtr engine = nullptr;
+    using TISearchPtr = shared_ptr<TaskIndependentSearchEngine>;
+    TISearchPtr ti_engine = nullptr;
     // TODO: Remove code duplication.
     for (size_t i = 0; i < args.size(); ++i) {
         string arg = args[i];
         bool is_last = (i == args.size() - 1);
         if (arg == "--search") {
-            if (engine)
+            if (ti_engine)
                 input_error("multiple --search arguments defined");
             if (is_last)
                 input_error("missing argument after --search");
@@ -103,7 +106,7 @@ static shared_ptr<SearchEngine> parse_cmd_line_aux(const vector<string> &args) {
                 parser::ASTNodePtr parsed = parser::parse(tokens);
                 parser::DecoratedASTNodePtr decorated = parsed->decorate();
                 plugins::Any constructed = decorated->construct();
-                engine = plugins::any_cast<SearchPtr>(constructed);
+                ti_engine = plugins::any_cast<TISearchPtr>(constructed);
             } catch (const utils::ContextError &e) {
                 input_error(e.get_message());
             }
@@ -154,16 +157,16 @@ static shared_ptr<SearchEngine> parse_cmd_line_aux(const vector<string> &args) {
         }
     }
 
-    if (engine) {
-        PlanManager &plan_manager = engine->get_plan_manager();
+    if (ti_engine) {
+        PlanManager &plan_manager = ti_engine->get_plan_manager();
         plan_manager.set_plan_filename(plan_filename);
         plan_manager.set_num_previously_generated_plans(num_previously_generated_plans);
         plan_manager.set_is_part_of_anytime_portfolio(is_part_of_anytime_portfolio);
     }
-    return engine;
+    return ti_engine;
 }
 
-shared_ptr<SearchEngine> parse_cmd_line(
+shared_ptr<TaskIndependentSearchEngine> parse_cmd_line(
     int argc, const char **argv, bool is_unit_cost) {
     vector<string> args;
     bool active = true;
