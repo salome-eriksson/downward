@@ -209,14 +209,37 @@ void print_initial_evaluator_values(
         );
 }
 
-static class SearchEngineCategoryPlugin : public plugins::TypedCategoryPlugin<SearchEngine> {
+static class SearchEngineCategoryPlugin : public plugins::TypedCategoryPlugin<TaskIndependentSearchEngine> {
 public:
-    SearchEngineCategoryPlugin() : TypedCategoryPlugin("SearchEngine") {
+    SearchEngineCategoryPlugin() : TypedCategoryPlugin("TaskIndependentSearchEngine") {
         // TODO: Replace add synopsis for the wiki page.
         // document_synopsis("...");
     }
 }
 _category_plugin;
+
+
+TaskIndependentSearchEngine::TaskIndependentSearchEngine(utils::Verbosity verbosity,
+                                                         OperatorCost cost_type,
+                                                         double max_time,
+                                                         int bound,
+                                                         string unparsed_config)
+        : description(unparsed_config),
+          status(IN_PROGRESS),
+          solution_found(false),
+          verbosity(verbosity),
+          bound(bound),
+          cost_type(cost_type),
+          max_time(max_time) {
+    if (bound < 0) {
+        cerr << "error: negative cost bound " << bound << endl;
+        utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
+    }
+}
+
+TaskIndependentSearchEngine::~TaskIndependentSearchEngine() {
+}
+
 
 void collect_preferred_operators(
     EvaluationContext &eval_context,

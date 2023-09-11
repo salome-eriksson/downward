@@ -5,7 +5,7 @@
 
 #include "../plugins/plugin.h"
 
-#include "../task_independent_evaluator.h"
+#include "../evaluator.h"
 
 #include <deque>
 #include <map>

@@ -3,13 +3,12 @@
 
 #include "../open_list.h"
 #include "../search_engine.h"
-#include "../task_independent_search_engine.h"
-#include "../task_independent_evaluator.h"
 
 #include <memory>
 #include <vector>
 
 class Evaluator;
+class TaskIndependentEvaluator;
 class PruningMethod;
 
 namespace plugins {

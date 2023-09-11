@@ -16,8 +16,6 @@
 #include <vector>
 
 
-#include "task_independent_search_engine.h"
-
 using namespace std;
 
 NO_RETURN
