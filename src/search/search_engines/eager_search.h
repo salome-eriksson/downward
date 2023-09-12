@@ -83,7 +83,8 @@ public:
                                         std::shared_ptr<TaskIndependentEvaluator> f_evaluator = nullptr,
                                         std::shared_ptr<TaskIndependentEvaluator> lazy_evaluator = nullptr,
                                         std::string unparsed_config = std::string());
-    virtual std::shared_ptr<SearchEngine> create_task_specific(std::shared_ptr<AbstractTask> &task) override;
+
+    plugins::Any create_task_specific(std::shared_ptr<AbstractTask> &task, std::shared_ptr<ComponentMap> &component_map) override;
 
     virtual ~TaskIndependentEagerSearch()  override;
 };

@@ -1,5 +1,6 @@
 #include "command_line.h"
 #include "search_engine.h"
+#include "search_engines/eager_search.h"
 
 #include "tasks/root_task.h"
 #include "task_utils/task_properties.h"
@@ -33,10 +34,13 @@ int main(int argc, const char **argv) {
     }
 
     utils::g_log << "Creating task independent SearchEngine..." << endl;
+    cout << "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" << endl;
     shared_ptr<TaskIndependentSearchEngine> ti_engine = parse_cmd_line(argc, argv, unit_cost);
 
     utils::g_log << "Creating task specific SearchEngine..." << endl;
-    shared_ptr<SearchEngine> engine = ti_engine->create_task_specific(tasks::g_root_task);
+    plugins::Any any_engine = ti_engine->create_task_specific(tasks::g_root_task);
+    shared_ptr<SearchEngine> engine = plugins::any_cast<shared_ptr<SearchEngine>>(any_engine);
+
 
     utils::Timer search_timer;
     engine->search();
