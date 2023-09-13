@@ -211,7 +211,7 @@ void print_initial_evaluator_values(
 
 static class SearchEngineCategoryPlugin : public plugins::TypedCategoryPlugin<TaskIndependentSearchEngine> {
 public:
-    SearchEngineCategoryPlugin() : TypedCategoryPlugin("TaskIndependentSearchEngine") {
+    SearchEngineCategoryPlugin() : TypedCategoryPlugin("SearchEngine") {
         // TODO: Replace add synopsis for the wiki page.
         // document_synopsis("...");
     }
