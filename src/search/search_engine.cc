@@ -224,13 +224,13 @@ TaskIndependentSearchEngine::TaskIndependentSearchEngine(utils::Verbosity verbos
                                                          double max_time,
                                                          int bound,
                                                          string unparsed_config)
-        : description(unparsed_config),
-          status(IN_PROGRESS),
-          solution_found(false),
-          verbosity(verbosity),
-          bound(bound),
-          cost_type(cost_type),
-          max_time(max_time) {
+    : description(unparsed_config),
+      status(IN_PROGRESS),
+      solution_found(false),
+      verbosity(verbosity),
+      bound(bound),
+      cost_type(cost_type),
+      max_time(max_time) {
     if (bound < 0) {
         cerr << "error: negative cost bound " << bound << endl;
         utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
@@ -240,9 +240,21 @@ TaskIndependentSearchEngine::TaskIndependentSearchEngine(utils::Verbosity verbos
 TaskIndependentSearchEngine::~TaskIndependentSearchEngine() {
 }
 
-plugins::Any TaskIndependentSearchEngine::create_task_specific(shared_ptr<AbstractTask> &task) {
-    std::shared_ptr<ComponentMap> component_map;
-    return create_task_specific(task, component_map);
+shared_ptr<SearchEngine> TaskIndependentSearchEngine::create_task_specific_SearchEngine(shared_ptr<AbstractTask> &task) {
+    utils::g_log << "Creating SearchEngine as root component..." << endl;
+    std::shared_ptr<ComponentMap> component_map = std::make_shared<ComponentMap>();
+    return create_task_specific_SearchEngine(task, component_map);
+}
+
+shared_ptr<SearchEngine> TaskIndependentSearchEngine::create_task_specific_SearchEngine([[maybe_unused]] shared_ptr<AbstractTask> &task, [[maybe_unused]] shared_ptr<ComponentMap> &component_map) {
+    cerr << "Tries to create SearchEngine in an unimplemented way." << endl;
+    utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
+}
+
+
+shared_ptr<Component> TaskIndependentSearchEngine::create_task_specific_Component(shared_ptr<AbstractTask> &task, shared_ptr<ComponentMap> &component_map) {
+    shared_ptr<SearchEngine> x = create_task_specific_SearchEngine(task, component_map);
+    return static_pointer_cast<Component>(x);
 }
 
 

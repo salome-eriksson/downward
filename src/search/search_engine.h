@@ -2,6 +2,7 @@
 #define SEARCH_ENGINE_H
 
 #include "abstract_task.h"
+#include "component_map.h"
 #include "operator_cost.h"
 #include "operator_id.h"
 #include "plan_manager.h"
@@ -12,7 +13,6 @@
 #include "task_proxy.h"
 
 #include "utils/logging.h"
-#include "component_map.h"
 
 #include <vector>
 
@@ -32,7 +32,7 @@ class SuccessorGenerator;
 
 enum SearchStatus {IN_PROGRESS, TIMEOUT, FAILED, SOLVED};
 
-class SearchEngine {
+class SearchEngine : public Component {
     std::string description;
     SearchStatus status;
     bool solution_found;
@@ -89,7 +89,7 @@ public:
     static void add_succ_order_options(plugins::Feature &feature);
 };
 
-class TaskIndependentSearchEngine {
+class TaskIndependentSearchEngine : public TaskIndependentComponent {
     std::string description;
     SearchStatus status;
     bool solution_found;
@@ -114,9 +114,12 @@ public:
 
     PlanManager &get_plan_manager() {return plan_manager;}
 
-    plugins::Any create_task_specific(std::shared_ptr<AbstractTask> &task);
-    virtual plugins::Any create_task_specific(std::shared_ptr<AbstractTask> &task, std::shared_ptr<ComponentMap> &component_map) = 0;
+    virtual std::shared_ptr<Component> create_task_specific_Component(
+        std::shared_ptr<AbstractTask> &task,
+        std::shared_ptr<ComponentMap> &component_map) override;
 
+    virtual std::shared_ptr<SearchEngine> create_task_specific_SearchEngine(std::shared_ptr<AbstractTask> &task);
+    virtual std::shared_ptr<SearchEngine> create_task_specific_SearchEngine(std::shared_ptr<AbstractTask> &task, std::shared_ptr<ComponentMap> &component_map);
 };
 
 /*
