@@ -4,7 +4,6 @@
 #include <memory>
 #include <string>
 
-class SearchEngine;
 class TaskIndependentSearchEngine;
 
 extern std::shared_ptr<TaskIndependentSearchEngine> parse_cmd_line(

@@ -349,7 +349,7 @@ TaskIndependentEagerSearch::TaskIndependentEagerSearch(utils::Verbosity verbosit
                                                        double max_time,
                                                        int bound,
                                                        bool reopen_closed_nodes,
-                                                       shared_ptr<TaskIndependentStateOpenList> open_list,
+                                                       shared_ptr<TaskIndependentOpenListFactory> open_list_factory,
                                                        vector<shared_ptr<TaskIndependentEvaluator>> preferred_operator_evaluators,
                                                        shared_ptr<PruningMethod> pruning_method,
                                                        shared_ptr<TaskIndependentEvaluator> f_evaluator,
@@ -363,7 +363,7 @@ TaskIndependentEagerSearch::TaskIndependentEagerSearch(utils::Verbosity verbosit
                                   unparsed_config
                                   ),
       reopen_closed_nodes(reopen_closed_nodes),
-      open_list(std::move(open_list)),
+      open_list_factory(std::move(open_list_factory)),
       f_evaluator(f_evaluator),
       preferred_operator_evaluators(preferred_operator_evaluators),
       lazy_evaluator(lazy_evaluator),
@@ -372,28 +372,56 @@ TaskIndependentEagerSearch::TaskIndependentEagerSearch(utils::Verbosity verbosit
 
 TaskIndependentEagerSearch::~TaskIndependentEagerSearch() {
 }
-shared_ptr<SearchEngine> TaskIndependentEagerSearch::create_task_specific(shared_ptr<AbstractTask> &task) {
-    utils::g_log << "Creating task specific EagerSearch..." << endl;
-    vector<shared_ptr<Evaluator>> ti_evaluators(preferred_operator_evaluators.size());
-    transform(preferred_operator_evaluators.begin(), preferred_operator_evaluators.end(), ti_evaluators.begin(),
-              [this, &task](const shared_ptr<TaskIndependentEvaluator> &eval) {
-                  return eval->create_task_specific(task);
-              }
-              );
+
+
+shared_ptr<EagerSearch> TaskIndependentEagerSearch::create_task_specific_EagerSearch(shared_ptr<AbstractTask> &task, std::shared_ptr<ComponentMap> &component_map) {
+    shared_ptr<EagerSearch> task_specific_eager_search;
+    if (component_map->contains_key(make_pair(task, static_cast<void *>(this)))) {
+        utils::g_log << "Reuse task specific EagerSearch..." << endl;
+        task_specific_eager_search = plugins::any_cast<shared_ptr<EagerSearch>>(
+            component_map->get_dual_key_value(task, this));
+    } else {
+        utils::g_log << "Creating task specific EagerSearch..." << endl;
+        vector<shared_ptr<Evaluator>> td_evaluators(preferred_operator_evaluators.size());
+        transform(preferred_operator_evaluators.begin(), preferred_operator_evaluators.end(), td_evaluators.begin(),
+                  [this, &task, &component_map](const shared_ptr<TaskIndependentEvaluator> &eval) {
+                      return eval->create_task_specific_Evaluator(task, component_map);
+                  }
+                  );
+
+        shared_ptr<StateOpenList> _open_list = shared_ptr<StateOpenList>(
+            open_list_factory->create_task_specific_OpenListFactory(task, component_map)->create_state_open_list());
+
+        task_specific_eager_search = make_shared<EagerSearch>(verbosity,
+                                                              cost_type,
+                                                              max_time,
+                                                              bound,
+                                                              reopen_closed_nodes,
+                                                              _open_list,
+                                                              td_evaluators,
+                                                              pruning_method,
+                                                              task,
+                                                              f_evaluator ? f_evaluator->create_task_specific_Evaluator(task, component_map) : nullptr,
+                                                              lazy_evaluator ? lazy_evaluator->create_task_specific_Evaluator(task, component_map) : nullptr);
+
+        component_map->add_dual_key_entry(task, this, plugins::Any(task_specific_eager_search));
+    }
+    return task_specific_eager_search;
+}
 
 
 
-    return make_shared<EagerSearch>(verbosity,
-                                    cost_type,
-                                    max_time,
-                                    bound,
-                                    reopen_closed_nodes,
-                                    open_list->create_task_specific(task),
-                                    ti_evaluators,
-                                    pruning_method,
-                                    task,
-                                    nullptr,
-                                    nullptr
-                                    );
+
+shared_ptr<EagerSearch> TaskIndependentEagerSearch::create_task_specific_EagerSearch(shared_ptr<AbstractTask> &task) {
+    utils::g_log << "Creating EagerSearch as root component..." << endl;
+    std::shared_ptr<ComponentMap> component_map = std::make_shared<ComponentMap>();
+    return create_task_specific_EagerSearch(task, component_map);
+}
+
+
+
+shared_ptr<SearchEngine> TaskIndependentEagerSearch::create_task_specific_SearchEngine(shared_ptr<AbstractTask> &task, shared_ptr<ComponentMap> &component_map) {
+    shared_ptr<SearchEngine> x = create_task_specific_EagerSearch(task, component_map);
+    return static_pointer_cast<SearchEngine>(x);
 }
 }

@@ -2,7 +2,6 @@
 #define EVALUATORS_COMBINING_EVALUATOR_H
 
 #include "../evaluator.h"
-#include "../task_independent_evaluator.h"
 
 #include <memory>
 #include <set>
@@ -52,7 +51,7 @@ public:
 
 extern void add_combining_evaluator_options_to_feature(
     plugins::Feature &feature);
-}
+
 
 
 class TaskIndependentCombiningEvaluator : public TaskIndependentEvaluator {
@@ -66,6 +65,13 @@ public:
                                                bool use_for_boosting = false,
                                                bool use_for_counting_evaluations = false);
     virtual ~TaskIndependentCombiningEvaluator() = default;
-};
 
+    virtual std::shared_ptr<Evaluator> create_task_specific_Evaluator(
+        std::shared_ptr<AbstractTask> &task,
+        std::shared_ptr<ComponentMap> &component_map) override;
+
+    virtual std::shared_ptr<CombiningEvaluator> create_task_specific_CombiningEvaluator(std::shared_ptr<AbstractTask> &task);
+    virtual std::shared_ptr<CombiningEvaluator> create_task_specific_CombiningEvaluator(std::shared_ptr<AbstractTask> &task, std::shared_ptr<ComponentMap> &component_map);
+};
+}
 #endif

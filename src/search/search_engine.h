@@ -1,6 +1,8 @@
 #ifndef SEARCH_ENGINE_H
 #define SEARCH_ENGINE_H
 
+#include "abstract_task.h"
+#include "component_map.h"
 #include "operator_cost.h"
 #include "operator_id.h"
 #include "plan_manager.h"
@@ -30,7 +32,7 @@ class SuccessorGenerator;
 
 enum SearchStatus {IN_PROGRESS, TIMEOUT, FAILED, SOLVED};
 
-class SearchEngine {
+class SearchEngine : public Component {
     std::string description;
     SearchStatus status;
     bool solution_found;
@@ -85,6 +87,39 @@ public:
     static void add_pruning_option(plugins::Feature &feature);
     static void add_options_to_feature(plugins::Feature &feature);
     static void add_succ_order_options(plugins::Feature &feature);
+};
+
+class TaskIndependentSearchEngine : public TaskIndependentComponent {
+    std::string description;
+    SearchStatus status;
+    bool solution_found;
+    Plan plan;
+protected:
+
+    mutable utils::Verbosity verbosity;
+    PlanManager plan_manager;
+    SearchProgress search_progress;
+    int bound;
+    OperatorCost cost_type;
+    bool is_unit_cost;
+    double max_time;
+
+public:
+    TaskIndependentSearchEngine(utils::Verbosity verbosity,
+                                OperatorCost cost_type,
+                                double max_time,
+                                int bound,
+                                std::string unparsed_config);
+    virtual ~TaskIndependentSearchEngine();
+
+    PlanManager &get_plan_manager() {return plan_manager;}
+
+    virtual std::shared_ptr<Component> create_task_specific_Component(
+        std::shared_ptr<AbstractTask> &task,
+        std::shared_ptr<ComponentMap> &component_map) override;
+
+    virtual std::shared_ptr<SearchEngine> create_task_specific_SearchEngine(std::shared_ptr<AbstractTask> &task);
+    virtual std::shared_ptr<SearchEngine> create_task_specific_SearchEngine(std::shared_ptr<AbstractTask> &task, std::shared_ptr<ComponentMap> &component_map);
 };
 
 /*

@@ -2,12 +2,7 @@
 
 #include "lm_cut_landmarks.h"
 
-#include "../task_proxy.h"
-
 #include "../plugins/plugin.h"
-#include "../task_utils/task_properties.h"
-#include "../utils/logging.h"
-#include "../utils/memory.h"
 
 #include <iostream>
 
@@ -45,16 +40,46 @@ int LandmarkCutHeuristic::compute_heuristic(const State &ancestor_state) {
 
 TaskIndependentLandmarkCutHeuristic::TaskIndependentLandmarkCutHeuristic(string unparsed_config, utils::LogProxy log, bool cache_evaluator_values)
     : TaskIndependentHeuristic(unparsed_config, log, cache_evaluator_values),
-      unparsed_config(unparsed_config), log(log), cache_evaluator_values(cache_evaluator_values) {
+      log(log) {
 }
 
 TaskIndependentLandmarkCutHeuristic::~TaskIndependentLandmarkCutHeuristic() {
 }
 
-shared_ptr<Evaluator> TaskIndependentLandmarkCutHeuristic::create_task_specific(shared_ptr<AbstractTask> &task) {
-    utils::g_log << "Creating task specific LandmarkCutHeuristic..." << endl;
-    return make_shared<LandmarkCutHeuristic>(unparsed_config, log, cache_evaluator_values, task);
+
+shared_ptr<LandmarkCutHeuristic> TaskIndependentLandmarkCutHeuristic::create_task_specific_LandmarkCutHeuristic(shared_ptr<AbstractTask> &task, std::shared_ptr<ComponentMap> &component_map) {
+    shared_ptr<LandmarkCutHeuristic> task_specific_lm_cut_heurisitc;
+    if (component_map->contains_key(make_pair(task, static_cast<void *>(this)))) {
+        log << "Reuse task specific LandmarkCutHeuristic..." << endl;
+        task_specific_lm_cut_heurisitc = plugins::any_cast<shared_ptr<LandmarkCutHeuristic>>(
+            component_map->get_dual_key_value(task, this));
+    } else {
+        log << "Creating task specific LandmarkCutHeuristic..." << endl;
+        task_specific_lm_cut_heurisitc = make_shared<LandmarkCutHeuristic>(unparsed_config, log, cache_evaluator_values, task);
+        component_map->add_dual_key_entry(task, this, plugins::Any(task_specific_lm_cut_heurisitc));
+    }
+    return task_specific_lm_cut_heurisitc;
 }
+
+
+shared_ptr<LandmarkCutHeuristic> TaskIndependentLandmarkCutHeuristic::create_task_specific_LandmarkCutHeuristic(shared_ptr<AbstractTask> &task) {
+    log << "Creating LandmarkCutHeuristic as root component..." << endl;
+    std::shared_ptr<ComponentMap> component_map = std::make_shared<ComponentMap>();
+    return create_task_specific_LandmarkCutHeuristic(task, component_map);
+}
+
+
+shared_ptr<Heuristic> TaskIndependentLandmarkCutHeuristic::create_task_specific_Heuristic(shared_ptr<AbstractTask> &task) {
+    std::shared_ptr<ComponentMap> component_map = std::make_shared<ComponentMap>();
+    return create_task_specific_Heuristic(task, component_map);
+}
+
+shared_ptr<Heuristic> TaskIndependentLandmarkCutHeuristic::create_task_specific_Heuristic(shared_ptr<AbstractTask> &task, shared_ptr<ComponentMap> &component_map) {
+    shared_ptr<LandmarkCutHeuristic> x = create_task_specific_LandmarkCutHeuristic(task, component_map);
+    return static_pointer_cast<Heuristic>(x);
+}
+
+
 class TaskIndependentLandmarkCutHeuristicFeature : public plugins::TypedFeature<TaskIndependentEvaluator, TaskIndependentLandmarkCutHeuristic> {
 public:
     TaskIndependentLandmarkCutHeuristicFeature() : TypedFeature("lmcut") {

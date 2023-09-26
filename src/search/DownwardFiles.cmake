@@ -51,6 +51,7 @@ fast_downward_plugin(
         abstract_task
         axioms
         command_line
+        component_map
         evaluation_context
         evaluation_result
         evaluator
@@ -74,8 +75,6 @@ fast_downward_plugin(
         state_id
         state_registry
         task_id
-        task_independent_evaluator
-        task_independent_search_engine
         task_proxy
 
     DEPENDS CAUSAL_GRAPH INT_HASH_SET INT_PACKER ORDERED_SET SEGMENTED_VECTOR SUBSCRIBER SUCCESSOR_GENERATOR TASK_PROPERTIES

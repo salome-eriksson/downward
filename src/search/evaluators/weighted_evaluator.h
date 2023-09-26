@@ -12,16 +12,49 @@ class Options;
 namespace weighted_evaluator {
 class WeightedEvaluator : public Evaluator {
     std::shared_ptr<Evaluator> evaluator;
-    int w;
+    int weight;
 
 public:
     explicit WeightedEvaluator(const plugins::Options &opts);
+    explicit WeightedEvaluator(utils::LogProxy log,
+                               std::shared_ptr<Evaluator> evaluator,
+                               int weight,
+                               std::basic_string<char> unparsed_config = std::string(),
+                               bool use_for_reporting_minima = false,
+                               bool use_for_boosting = false,
+                               bool use_for_counting_evaluations = false);
     virtual ~WeightedEvaluator() override;
 
     virtual bool dead_ends_are_reliable() const override;
     virtual EvaluationResult compute_result(
         EvaluationContext &eval_context) override;
     virtual void get_path_dependent_evaluators(std::set<Evaluator *> &evals) override;
+};
+
+
+class TaskIndependentWeightedEvaluator : public TaskIndependentEvaluator {
+private:
+    std::shared_ptr<TaskIndependentEvaluator> evaluator;
+    int weight;
+public:
+    explicit TaskIndependentWeightedEvaluator(utils::LogProxy log,
+                                              std::shared_ptr<TaskIndependentEvaluator> evaluator,
+                                              int weight,
+                                              std::string unparsed_config = std::string(),
+                                              bool use_for_reporting_minima = false,
+                                              bool use_for_boosting = false,
+                                              bool use_for_counting_evaluations = false);
+
+    virtual ~TaskIndependentWeightedEvaluator()  override;
+
+    virtual std::shared_ptr<Evaluator> create_task_specific_Evaluator(std::shared_ptr<AbstractTask> &task) override;
+
+    virtual std::shared_ptr<Evaluator> create_task_specific_Evaluator(
+        std::shared_ptr<AbstractTask> &task,
+        std::shared_ptr<ComponentMap> &component_map) override;
+
+    virtual std::shared_ptr<WeightedEvaluator> create_task_specific_WeightedEvaluator(std::shared_ptr<AbstractTask> &task);
+    virtual std::shared_ptr<WeightedEvaluator> create_task_specific_WeightedEvaluator(std::shared_ptr<AbstractTask> &task, std::shared_ptr<ComponentMap> &component_map);
 };
 }
 

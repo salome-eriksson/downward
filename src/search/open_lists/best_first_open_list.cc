@@ -7,56 +7,10 @@
 #include "../utils/memory.h"
 
 #include <cassert>
-#include <deque>
-#include <map>
 
 using namespace std;
 
 namespace standard_scalar_open_list {
-template<class Entry>
-class BestFirstOpenList : public OpenList<Entry> {
-    typedef deque<Entry> Bucket;
-
-    map<int, Bucket> buckets;
-    int size;
-
-    shared_ptr<Evaluator> evaluator;
-
-protected:
-    virtual void do_insertion(EvaluationContext &eval_context,
-                              const Entry &entry) override;
-
-public:
-    explicit BestFirstOpenList(const plugins::Options &opts);
-    BestFirstOpenList(const shared_ptr<Evaluator> &eval, bool preferred_only);
-    virtual ~BestFirstOpenList() override = default;
-
-    virtual Entry remove_min() override;
-    virtual bool empty() const override;
-    virtual void clear() override;
-    virtual void get_path_dependent_evaluators(set<Evaluator *> &evals) override;
-    virtual bool is_dead_end(
-        EvaluationContext &eval_context) const override;
-    virtual bool is_reliable_dead_end(
-        EvaluationContext &eval_context) const override;
-};
-
-
-template<class Entry>
-BestFirstOpenList<Entry>::BestFirstOpenList(const plugins::Options &opts)
-    : OpenList<Entry>(opts.get<bool>("pref_only")),
-      size(0),
-      evaluator(opts.get<shared_ptr<Evaluator>>("eval")) {
-}
-
-template<class Entry>
-BestFirstOpenList<Entry>::BestFirstOpenList(
-    const shared_ptr<Evaluator> &evaluator, bool preferred_only)
-    : OpenList<Entry>(preferred_only),
-      size(0),
-      evaluator(evaluator) {
-}
-
 template<class Entry>
 void BestFirstOpenList<Entry>::do_insertion(
     EvaluationContext &eval_context, const Entry &entry) {
@@ -114,24 +68,73 @@ BestFirstOpenListFactory::BestFirstOpenListFactory(
     : options(options) {
 }
 
-unique_ptr<StateOpenList>
+BestFirstOpenListFactory::BestFirstOpenListFactory(bool pref_only, shared_ptr<Evaluator> evaluator)
+    : pref_only(pref_only), size(0),
+      evaluator(evaluator) {
+}
+
+
+shared_ptr<StateOpenList>
 BestFirstOpenListFactory::create_state_open_list() {
-    return utils::make_unique_ptr<BestFirstOpenList<StateOpenListEntry>>(options);
+    return make_shared<BestFirstOpenList<StateOpenListEntry>>(options);
 }
 
-unique_ptr<EdgeOpenList>
+shared_ptr<EdgeOpenList>
 BestFirstOpenListFactory::create_edge_open_list() {
-    return utils::make_unique_ptr<BestFirstOpenList<EdgeOpenListEntry>>(options);
+    return make_shared<BestFirstOpenList<EdgeOpenListEntry>>(options);
 }
 
-class BestFirstOpenListFeature : public plugins::TypedFeature<OpenListFactory, BestFirstOpenListFactory> {
+TaskIndependentBestFirstOpenListFactory::TaskIndependentBestFirstOpenListFactory(const plugins::Options &opts)
+    : pref_only(opts.get<bool>("pref_only")),
+      size(0),
+      evaluator(opts.get<std::shared_ptr<TaskIndependentEvaluator>>("eval")),
+      options(opts) {
+}
+
+TaskIndependentBestFirstOpenListFactory::TaskIndependentBestFirstOpenListFactory(
+    bool pref_only, shared_ptr<TaskIndependentEvaluator> evaluator
+    )
+    : pref_only(pref_only), size(0), evaluator(evaluator) {
+}
+
+
+shared_ptr<BestFirstOpenListFactory> TaskIndependentBestFirstOpenListFactory::create_task_specific_BestFirstOpenListFactory(shared_ptr<AbstractTask> &task, std::shared_ptr<ComponentMap> &component_map) {
+    shared_ptr<BestFirstOpenListFactory> task_specific_x;
+    if (component_map->contains_key(make_pair(task, static_cast<void *>(this)))) {
+        utils::g_log << "Reuse task specific BestFirstOpenListFactory..." << endl;
+        task_specific_x = plugins::any_cast<shared_ptr<BestFirstOpenListFactory>>(
+            component_map->get_dual_key_value(task, this));
+    } else {
+        utils::g_log << "Creating task specific BestFirstOpenListFactory..." << endl;
+
+        task_specific_x = make_shared<BestFirstOpenListFactory>(pref_only, evaluator->create_task_specific_Evaluator(task, component_map));
+        component_map->add_dual_key_entry(task, this, plugins::Any(task_specific_x));
+    }
+    return task_specific_x;
+}
+
+
+shared_ptr<BestFirstOpenListFactory> TaskIndependentBestFirstOpenListFactory::create_task_specific_BestFirstOpenListFactory(shared_ptr<AbstractTask> &task) {
+    std::shared_ptr<ComponentMap> component_map = std::make_shared<ComponentMap>();
+    return create_task_specific_BestFirstOpenListFactory(task, component_map);
+}
+
+
+shared_ptr<OpenListFactory> TaskIndependentBestFirstOpenListFactory::create_task_specific_OpenListFactory(shared_ptr<AbstractTask> &task, shared_ptr<ComponentMap> &component_map) {
+    utils::g_log << "Creating BestFirstOpenListFactory as root component..." << endl;
+    shared_ptr<BestFirstOpenListFactory> x = create_task_specific_BestFirstOpenListFactory(task, component_map);
+    return static_pointer_cast<OpenListFactory>(x);
+}
+
+
+class BestFirstOpenListFeature : public plugins::TypedFeature<TaskIndependentOpenListFactory, TaskIndependentBestFirstOpenListFactory> {
 public:
     BestFirstOpenListFeature() : TypedFeature("single") {
         document_title("Best-first open list");
         document_synopsis(
             "Open list that uses a single evaluator and FIFO tiebreaking.");
 
-        add_option<shared_ptr<Evaluator>>("eval", "evaluator");
+        add_option<shared_ptr<TaskIndependentEvaluator>>("eval", "evaluator");
         add_option<bool>(
             "pref_only",
             "insert only nodes generated by preferred operators", "false");
@@ -143,6 +146,11 @@ public:
             "values to buckets. Pushing and popping from a bucket runs in constant "
             "time. Therefore, inserting and removing an entry from the open list "
             "takes time O(log(n)), where n is the number of buckets.");
+    }
+    virtual shared_ptr<TaskIndependentBestFirstOpenListFactory> create_component(const plugins::Options &opts, const utils::Context &context) const override {
+        plugins::verify_list_non_empty<shared_ptr<OpenListFactory>>(context, opts, "sublists");
+        return make_shared<TaskIndependentBestFirstOpenListFactory>(opts.get<bool>("pref_only"),
+                                                                    opts.get<shared_ptr<TaskIndependentEvaluator>>("eval"));
     }
 };
 

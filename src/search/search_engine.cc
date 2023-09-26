@@ -209,7 +209,7 @@ void print_initial_evaluator_values(
         );
 }
 
-static class SearchEngineCategoryPlugin : public plugins::TypedCategoryPlugin<SearchEngine> {
+static class SearchEngineCategoryPlugin : public plugins::TypedCategoryPlugin<TaskIndependentSearchEngine> {
 public:
     SearchEngineCategoryPlugin() : TypedCategoryPlugin("SearchEngine") {
         // TODO: Replace add synopsis for the wiki page.
@@ -217,6 +217,46 @@ public:
     }
 }
 _category_plugin;
+
+
+TaskIndependentSearchEngine::TaskIndependentSearchEngine(utils::Verbosity verbosity,
+                                                         OperatorCost cost_type,
+                                                         double max_time,
+                                                         int bound,
+                                                         string unparsed_config)
+    : description(unparsed_config),
+      status(IN_PROGRESS),
+      solution_found(false),
+      verbosity(verbosity),
+      bound(bound),
+      cost_type(cost_type),
+      max_time(max_time) {
+    if (bound < 0) {
+        cerr << "error: negative cost bound " << bound << endl;
+        utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
+    }
+}
+
+TaskIndependentSearchEngine::~TaskIndependentSearchEngine() {
+}
+
+shared_ptr<SearchEngine> TaskIndependentSearchEngine::create_task_specific_SearchEngine(shared_ptr<AbstractTask> &task) {
+    utils::g_log << "Creating SearchEngine as root component..." << endl;
+    std::shared_ptr<ComponentMap> component_map = std::make_shared<ComponentMap>();
+    return create_task_specific_SearchEngine(task, component_map);
+}
+
+shared_ptr<SearchEngine> TaskIndependentSearchEngine::create_task_specific_SearchEngine([[maybe_unused]] shared_ptr<AbstractTask> &task, [[maybe_unused]] shared_ptr<ComponentMap> &component_map) {
+    cerr << "Tries to create SearchEngine in an unimplemented way." << endl;
+    utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
+}
+
+
+shared_ptr<Component> TaskIndependentSearchEngine::create_task_specific_Component(shared_ptr<AbstractTask> &task, shared_ptr<ComponentMap> &component_map) {
+    shared_ptr<SearchEngine> x = create_task_specific_SearchEngine(task, component_map);
+    return static_pointer_cast<Component>(x);
+}
+
 
 void collect_preferred_operators(
     EvaluationContext &eval_context,

@@ -5,7 +5,6 @@
 #include "operator_id.h"
 #include "per_state_information.h"
 #include "task_proxy.h"
-#include "task_independent_evaluator.h"
 
 #include "algorithms/ordered_set.h"
 
@@ -105,6 +104,16 @@ public:
                                       bool cache_evaluator_values);
     virtual ~TaskIndependentHeuristic() = default;
 
-    static void add_options_to_feature(plugins::Feature &feature); //TODO issue559 is this needed?
+    static void add_options_to_feature(plugins::Feature &feature); //TODO: issue559 is this needed?
+
+
+    virtual std::shared_ptr<Evaluator> create_task_specific_Evaluator(
+        std::shared_ptr<AbstractTask> &task,
+        std::shared_ptr<ComponentMap> &component_map) override;
+
+    virtual std::shared_ptr<Heuristic> create_task_specific_Heuristic(std::shared_ptr<AbstractTask> &task);
+    virtual std::shared_ptr<Heuristic> create_task_specific_Heuristic(std::shared_ptr<AbstractTask> &task, std::shared_ptr<ComponentMap> &component_map);
 };
+
+
 #endif

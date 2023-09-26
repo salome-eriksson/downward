@@ -11,12 +11,8 @@
 #include "utils/logging.h"
 #include "utils/strings.h"
 
-#include <algorithm>
 #include <sstream>
 #include <vector>
-
-
-#include "task_independent_search_engine.h"
 
 using namespace std;
 
