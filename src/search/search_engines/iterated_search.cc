@@ -21,6 +21,33 @@ IteratedSearch::IteratedSearch(const plugins::Options &opts)
       iterated_found_solution(false) {
 }
 
+IteratedSearch::IteratedSearch(utils::Verbosity verbosity,
+                               OperatorCost cost_type,
+                               double max_time,
+                               string unparsed_config,
+                               vector<parser::LazyValue> engine_configs,
+                               bool pass_bound,
+                               bool repeat_last_phase,
+                               bool continue_on_fail,
+                               bool continue_on_solve
+                               ) : SearchEngine(verbosity,
+                                                cost_type,
+                                                max_time,
+                                                bound,
+                                                unparsed_config,
+                                                task),
+                                   engine_configs(engine_configs),
+                                   pass_bound(pass_bound),
+                                   repeat_last_phase(repeat_last_phase),
+                                   continue_on_fail(continue_on_fail),
+                                   continue_on_solve(continue_on_solve),
+                                   phase(0),
+                                   last_phase_found_solution(false),
+                                   best_bound(bound),
+                                   iterated_found_solution(false)
+                               {
+                               }
+
 shared_ptr<SearchEngine> IteratedSearch::get_search_engine(
     int engine_configs_index) {
     parser::LazyValue &engine_config = engine_configs[engine_configs_index];
@@ -184,8 +211,8 @@ public:
             "will be saved between iterations.");
     }
 
-    virtual shared_ptr<IteratedSearch> create_component(const plugins::Options &options, const utils::Context &context) const override {
-        plugins::Options options_copy(options);
+    virtual shared_ptr<IteratedSearch> create_component(const plugins::Options &opts, const utils::Context &context) const override {
+        plugins::Options options_copy(opts);
         /*
           The options entry 'engine_configs' is a LazyValue representing a list
           of search engines. But iterated search expects a list of LazyValues,
@@ -198,10 +225,20 @@ public:
           the builder is a light-weight operation.
         */
         vector<parser::LazyValue> engine_configs =
-            options.get<parser::LazyValue>("engine_configs").construct_lazy_list();
+            opts.get<parser::LazyValue>("engine_configs").construct_lazy_list();
         options_copy.set("engine_configs", engine_configs);
         plugins::verify_list_non_empty<parser::LazyValue>(context, options_copy, "engine_configs");
-        return make_shared<IteratedSearch>(options_copy);
+
+        return make_shared<IteratedSearch>(opts.get<utils::Verbosity>("verbosity"),
+                                           opts.get<OperatorCost>("cost_type"),
+                                           opts.get<double>("max_time"),
+                                           opts.get_unparsed_config(),
+                                           opts.get<parser::LazyValue>("engine_configs").construct_lazy_list(),
+                                           opts.get<bool>("pass_bound"),
+                                           opts.get<bool>("repeat_last"),
+                                           opts.get<bool>("continue_on_fail"),
+                                           opts.get<bool>("continue_on_solve")
+                                           );
     }
 };
 
