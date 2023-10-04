@@ -48,8 +48,6 @@ IteratedSearch::IteratedSearch(utils::Verbosity verbosity,
                                    best_bound(bound),
                                    iterated_found_solution(false)
                                {
-    cout << "IteratedSearch::IteratedSearch" << endl;
-    cout << "  cost bound: " << bound << endl;
                                }
 
 shared_ptr<TaskIndependentSearchEngine> IteratedSearch::get_search_engine(
@@ -75,11 +73,7 @@ shared_ptr<TaskIndependentSearchEngine> IteratedSearch::get_search_engine(
 
 shared_ptr<SearchEngine> IteratedSearch::create_current_phase() {
 
-    cout << "in IteratedSearch::create_current_phase()" << endl;
-
-    cout << "about to int num_phases = engine_configs.size();" << endl;
     int num_phases = engine_configs.size();
-    cout << "done with int num_phases = engine_configs.size();" << endl;
 
     if (phase >= num_phases) {
         /* We've gone through all searches. We continue if
@@ -90,28 +84,19 @@ shared_ptr<SearchEngine> IteratedSearch::create_current_phase() {
            this overrides continue_on_fail.
         */
         if (repeat_last_phase && last_phase_found_solution) {
-            cout << "CASE: repeat_last_phase && last_phase_found_solution" << endl;
             auto x1 = get_search_engine(engine_configs.size() - 1);
             auto ret1 = x1->create_task_specific_SearchEngine(task,1);
             return ret1;
         } else {
-            cout << "CASE: NOT (repeat_last_phase && last_phase_found_solution)" << endl;
             return nullptr;
         }
     }
-    cout << "CASE: NOT ( phase >= num_phases )" << endl;
 
-    auto x2 = get_search_engine(phase);
-    cout << "create task specific SearchEngine for phase: " << phase << endl;
-    auto ret2 = x2->create_task_specific_SearchEngine(task, 1);
-    cout << "returning SearchEngine" << endl;
-    return ret2;
+    return get_search_engine(phase)->create_task_specific_SearchEngine(task, 1);
 }
 
 SearchStatus IteratedSearch::step() {
-    cout << "about to shared_ptr<SearchEngine> current_search = create_current_phase()" << endl;
     shared_ptr<SearchEngine> current_search = create_current_phase();
-    cout << "done with shared_ptr<SearchEngine> current_search = create_current_phase()" << endl;
     if (!current_search) {
         return found_solution() ? SOLVED : FAILED;
     }
@@ -120,10 +105,7 @@ SearchStatus IteratedSearch::step() {
     }
     ++phase;
 
-
-    cout << "about to current_search->search();" << endl;
     current_search->search();
-    cout << "done with current_search->search();" << endl;
 
     Plan found_plan;
     int plan_cost = 0;
@@ -188,6 +170,7 @@ void IteratedSearch::save_plan_if_necessary() {
 TaskIndependentIteratedSearch::TaskIndependentIteratedSearch(utils::Verbosity verbosity,
                                                              OperatorCost cost_type,
                                                              double max_time,
+                                                             int bound,
                                                              string unparsed_config,
                                                              vector<parser::LazyValue> engine_configs,
                                                              bool pass_bound,
@@ -330,6 +313,7 @@ public:
         return make_shared<TaskIndependentIteratedSearch>(opts.get<utils::Verbosity>("verbosity"),
                                            opts.get<OperatorCost>("cost_type"),
                                            opts.get<double>("max_time"),
+                                                   opts.get<int>("bound"),
                                            opts.get_unparsed_config(),
                                            opts.get<parser::LazyValue>("engine_configs").construct_lazy_list(),
                                            opts.get<bool>("pass_bound"),
