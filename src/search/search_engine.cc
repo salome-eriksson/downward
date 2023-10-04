@@ -111,14 +111,10 @@ void SearchEngine::set_plan(const Plan &p) {
 }
 
 void SearchEngine::search() {
-    cout << "about to initialize()" << endl;
     initialize();
-    cout << "done with initialize()" << endl;
     utils::CountdownTimer timer(max_time);
     while (status == IN_PROGRESS) {
-        cout << "about to step() in " << description << endl;
         status = step();
-        cout << "done with step()" << endl;
         if (timer.is_expired()) {
             log << "Time limit reached. Abort search." << endl;
             status = TIMEOUT;
@@ -251,7 +247,7 @@ shared_ptr<SearchEngine> TaskIndependentSearchEngine::create_task_specific_Searc
 }
 
 shared_ptr<SearchEngine> TaskIndependentSearchEngine::create_task_specific_SearchEngine([[maybe_unused]] const shared_ptr<AbstractTask> &task, [[maybe_unused]] shared_ptr<ComponentMap> &component_map, [[maybe_unused]] int depth) {
-    cerr << "Tries to create SearchEngine in an unimplemented way." << endl;
+    cerr << std::string(depth, ' ') << "Tries to create SearchEngine in an unimplemented way." << endl;
     utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
 }
 
