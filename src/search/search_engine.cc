@@ -116,7 +116,7 @@ void SearchEngine::search() {
     cout << "done with initialize()" << endl;
     utils::CountdownTimer timer(max_time);
     while (status == IN_PROGRESS) {
-        cout << "about to step()" << endl;
+        cout << "about to step() in " << description << endl;
         status = step();
         cout << "done with step()" << endl;
         if (timer.is_expired()) {
@@ -245,7 +245,7 @@ TaskIndependentSearchEngine::~TaskIndependentSearchEngine() {
 }
 
 shared_ptr<SearchEngine> TaskIndependentSearchEngine::create_task_specific_SearchEngine(const shared_ptr<AbstractTask> &task, int depth) {
-    utils::g_log << "Creating SearchEngine as root component..." << endl;
+    utils::g_log << std::string(depth, ' ') << "Creating SearchEngine as root component..." << endl;
     std::shared_ptr<ComponentMap> component_map = std::make_shared<ComponentMap>();
     return create_task_specific_SearchEngine(task, component_map, depth);
 }

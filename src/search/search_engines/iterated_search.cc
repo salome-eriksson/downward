@@ -54,15 +54,15 @@ IteratedSearch::IteratedSearch(utils::Verbosity verbosity,
 
 shared_ptr<TaskIndependentSearchEngine> IteratedSearch::get_search_engine(
     int engine_configs_index) {
-    cout << "in IteratedSearch::get_search_engine(int)" << endl;
+    cout << "in IteratedSearch::get_search_engine( " << engine_configs_index << " )" << endl;
     cout << "about to parser::LazyValue &engine_config = engine_configs[engine_configs_index];" << endl;
     parser::LazyValue &engine_config = engine_configs[engine_configs_index];
     cout << "done with parser::LazyValue &engine_config = engine_configs[engine_configs_index];" << endl;
     shared_ptr<TaskIndependentSearchEngine> engine;
     try{
-        cout << "about to engine = engine_config.construct<shared_ptr<SearchEngine>>();" << endl;
+        cout << "about to engine = engine_config.construct<shared_ptr<TaskIndependentSearchEngine>>();" << endl;
         engine = engine_config.construct<shared_ptr<TaskIndependentSearchEngine>>();
-        cout << "done with engine = engine_config.construct<shared_ptr<SearchEngine>>();" << endl;
+        cout << "done with engine = engine_config.construct<shared_ptr<TaskIndependentSearchEngine>>();" << endl;
     } catch (const utils::ContextError &e) {
         cerr << "Delayed construction of LazyValue failed" << endl;
         cerr << e.get_message() << endl;
@@ -99,8 +99,12 @@ shared_ptr<SearchEngine> IteratedSearch::create_current_phase() {
             return nullptr;
         }
     }
+    cout << "CASE: NOT ( phase >= num_phases )" << endl;
+
     auto x2 = get_search_engine(phase);
+    cout << "create task specific SearchEngine for phase: " << phase << endl;
     auto ret2 = x2->create_task_specific_SearchEngine(task, 1);
+    cout << "returning SearchEngine" << endl;
     return ret2;
 }
 
@@ -236,7 +240,7 @@ shared_ptr<IteratedSearch> TaskIndependentIteratedSearch::create_task_specific_I
 
 
 shared_ptr<IteratedSearch> TaskIndependentIteratedSearch::create_task_specific_IteratedSearch(const shared_ptr<AbstractTask> &task, int depth) {
-    utils::g_log << "Creating IteratedSearch as root component..." << endl;
+    utils::g_log << std::string(depth, ' ') << "Creating IteratedSearch as root component..." << endl;
     std::shared_ptr<ComponentMap> component_map = std::make_shared<ComponentMap>();
     return create_task_specific_IteratedSearch(task, component_map, depth);
 }
