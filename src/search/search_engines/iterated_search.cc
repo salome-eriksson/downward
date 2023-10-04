@@ -52,21 +52,16 @@ IteratedSearch::IteratedSearch(utils::Verbosity verbosity,
 
 shared_ptr<TaskIndependentSearchEngine> IteratedSearch::get_search_engine(
     int engine_configs_index) {
-    cout << "in IteratedSearch::get_search_engine( " << engine_configs_index << " )" << endl;
-    cout << "about to parser::LazyValue &engine_config = engine_configs[engine_configs_index];" << endl;
     parser::LazyValue &engine_config = engine_configs[engine_configs_index];
-    cout << "done with parser::LazyValue &engine_config = engine_configs[engine_configs_index];" << endl;
     shared_ptr<TaskIndependentSearchEngine> engine;
     try{
-        cout << "about to engine = engine_config.construct<shared_ptr<TaskIndependentSearchEngine>>();" << endl;
         engine = engine_config.construct<shared_ptr<TaskIndependentSearchEngine>>();
-        cout << "done with engine = engine_config.construct<shared_ptr<TaskIndependentSearchEngine>>();" << endl;
     } catch (const utils::ContextError &e) {
         cerr << "Delayed construction of LazyValue failed" << endl;
         cerr << e.get_message() << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
-    auto x = "engine->get_description(); is only possible in TS_Component";
+    auto x = "engine->get_description(); is only possible in TS_Component"; // TODO: issue559 add get_description() to TI_XYZ.
     log << "Starting search: " << x << endl;
     return engine;
 }
