@@ -22,7 +22,7 @@ class IteratedSearch : public SearchEngine {
     int best_bound;
     bool iterated_found_solution;
 
-    std::shared_ptr<SearchEngine> get_search_engine(int engine_configs_index);
+    std::shared_ptr<TaskIndependentSearchEngine> get_search_engine(int engine_configs_index);
     std::shared_ptr<SearchEngine> create_current_phase();
     SearchStatus step_return_value();
 
@@ -34,7 +34,7 @@ public:
                    OperatorCost cost_type,
                    double max_time,
                    int bound,
-                   std::shared_ptr<AbstractTask> &task,
+                   const std::shared_ptr<AbstractTask> &task,
                    std::vector<parser::LazyValue> engine_configs,
                    bool pass_bound,
                    bool repeat_last_phase,
@@ -68,11 +68,11 @@ public:
                                            bool continue_on_solve);
 
     virtual std::shared_ptr<SearchEngine> create_task_specific_SearchEngine(
-            std::shared_ptr<AbstractTask> &task,
+            const std::shared_ptr<AbstractTask> &task,
             std::shared_ptr<ComponentMap> &component_map, int depth = -1) override;
 
-    virtual std::shared_ptr<IteratedSearch> create_task_specific_IteratedSearch(std::shared_ptr<AbstractTask> &task, int depth = -1);
-    virtual std::shared_ptr<IteratedSearch> create_task_specific_IteratedSearch(std::shared_ptr<AbstractTask> &task, std::shared_ptr<ComponentMap> &component_map, int depth = -1);
+    virtual std::shared_ptr<IteratedSearch> create_task_specific_IteratedSearch(const std::shared_ptr<AbstractTask> &task, int depth = -1);
+    virtual std::shared_ptr<IteratedSearch> create_task_specific_IteratedSearch(const std::shared_ptr<AbstractTask> &task, std::shared_ptr<ComponentMap> &component_map, int depth = -1);
 
     virtual ~TaskIndependentIteratedSearch()  override;
 };
