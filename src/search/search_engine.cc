@@ -111,10 +111,14 @@ void SearchEngine::set_plan(const Plan &p) {
 }
 
 void SearchEngine::search() {
+    cout << "about to initialize()" << endl;
     initialize();
+    cout << "done with initialize()" << endl;
     utils::CountdownTimer timer(max_time);
     while (status == IN_PROGRESS) {
+        cout << "about to step()" << endl;
         status = step();
+        cout << "done with step()" << endl;
         if (timer.is_expired()) {
             log << "Time limit reached. Abort search." << endl;
             status = TIMEOUT;
@@ -240,20 +244,20 @@ TaskIndependentSearchEngine::TaskIndependentSearchEngine(utils::Verbosity verbos
 TaskIndependentSearchEngine::~TaskIndependentSearchEngine() {
 }
 
-shared_ptr<SearchEngine> TaskIndependentSearchEngine::create_task_specific_SearchEngine(shared_ptr<AbstractTask> &task) {
+shared_ptr<SearchEngine> TaskIndependentSearchEngine::create_task_specific_SearchEngine(shared_ptr<AbstractTask> &task, int depth) {
     utils::g_log << "Creating SearchEngine as root component..." << endl;
     std::shared_ptr<ComponentMap> component_map = std::make_shared<ComponentMap>();
-    return create_task_specific_SearchEngine(task, component_map);
+    return create_task_specific_SearchEngine(task, component_map, depth);
 }
 
-shared_ptr<SearchEngine> TaskIndependentSearchEngine::create_task_specific_SearchEngine([[maybe_unused]] shared_ptr<AbstractTask> &task, [[maybe_unused]] shared_ptr<ComponentMap> &component_map) {
+shared_ptr<SearchEngine> TaskIndependentSearchEngine::create_task_specific_SearchEngine([[maybe_unused]] shared_ptr<AbstractTask> &task, [[maybe_unused]] shared_ptr<ComponentMap> &component_map, int depth) {
     cerr << "Tries to create SearchEngine in an unimplemented way." << endl;
     utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
 }
 
 
-shared_ptr<Component> TaskIndependentSearchEngine::create_task_specific_Component(shared_ptr<AbstractTask> &task, shared_ptr<ComponentMap> &component_map) {
-    shared_ptr<SearchEngine> x = create_task_specific_SearchEngine(task, component_map);
+shared_ptr<Component> TaskIndependentSearchEngine::create_task_specific_Component(shared_ptr<AbstractTask> &task, shared_ptr<ComponentMap> &component_map, int depth) {
+    shared_ptr<SearchEngine> x = create_task_specific_SearchEngine(task, component_map, depth);
     return static_pointer_cast<Component>(x);
 }
 
