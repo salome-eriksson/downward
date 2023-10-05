@@ -29,7 +29,6 @@ class IteratedSearch : public SearchEngine {
     virtual SearchStatus step() override;
 
 public:
-    IteratedSearch(const plugins::Options &opts);
     IteratedSearch(utils::Verbosity verbosity,
                    OperatorCost cost_type,
                    double max_time,
