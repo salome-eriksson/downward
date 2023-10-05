@@ -10,7 +10,7 @@
 
 namespace iterated_search {
 class IteratedSearch : public SearchEngine {
-    std::vector<parser::LazyValue> engine_configs;
+    std::vector<std::shared_ptr<TaskIndependentSearchEngine>> engines;
 
     bool pass_bound;
     bool repeat_last_phase;
@@ -35,7 +35,7 @@ public:
                    double max_time,
                    int bound,
                    const std::shared_ptr<AbstractTask> &task,
-                   std::vector<parser::LazyValue> engine_configs,
+                   std::vector<std::shared_ptr<TaskIndependentSearchEngine>> engines,
                    bool pass_bound,
                    bool repeat_last_phase,
                    bool continue_on_fail,
@@ -50,7 +50,7 @@ public:
 
 class TaskIndependentIteratedSearch : public TaskIndependentSearchEngine {
 private:
-    std::vector<parser::LazyValue> engine_configs;
+    std::vector<std::shared_ptr<TaskIndependentSearchEngine>> engines;
 
     bool pass_bound;
     bool repeat_last_phase;
@@ -62,7 +62,7 @@ public:
                                            double max_time,
                                            int bound,
                                            std::string unparsed_config,
-                                           std::vector<parser::LazyValue> engine_configs,
+                                           std::vector<std::shared_ptr<TaskIndependentSearchEngine>> engines,
                                            bool pass_bound,
                                            bool repeat_last_phase,
                                            bool continue_on_fail,

@@ -10,7 +10,7 @@ using namespace std;
 namespace iterated_search {
 IteratedSearch::IteratedSearch(const plugins::Options &opts)
     : SearchEngine(opts),
-      engine_configs(opts.get_list<parser::LazyValue>("engine_configs")),
+      engines(opts.get_list<shared_ptr<TaskIndependentSearchEngine>>("engines")),
       pass_bound(opts.get<bool>("pass_bound")),
       repeat_last_phase(opts.get<bool>("repeat_last")),
       continue_on_fail(opts.get<bool>("continue_on_fail")),
@@ -26,7 +26,7 @@ IteratedSearch::IteratedSearch(utils::Verbosity verbosity,
                                double max_time,
                                int bound,
                                const shared_ptr<AbstractTask> &task,
-                               vector<parser::LazyValue> engine_configs,
+                               vector<shared_ptr<TaskIndependentSearchEngine>> engines,
                                bool pass_bound,
                                bool repeat_last_phase,
                                bool continue_on_fail,
@@ -38,7 +38,7 @@ IteratedSearch::IteratedSearch(utils::Verbosity verbosity,
                                                 bound,
                                                 unparsed_config,
                                                 task),
-                                   engine_configs(engine_configs),
+                                   engines(engines),
                                    pass_bound(pass_bound),
                                    repeat_last_phase(repeat_last_phase),
                                    continue_on_fail(continue_on_fail),
@@ -50,24 +50,10 @@ IteratedSearch::IteratedSearch(utils::Verbosity verbosity,
                                {
                                }
 
-shared_ptr<TaskIndependentSearchEngine> IteratedSearch::get_search_engine(
-    int engine_configs_index) {
-    parser::LazyValue &engine_config = engine_configs[engine_configs_index];
-    shared_ptr<TaskIndependentSearchEngine> engine;
-    try{
-        engine = engine_config.construct<shared_ptr<TaskIndependentSearchEngine>>();
-    } catch (const utils::ContextError &e) {
-        cerr << "Delayed construction of LazyValue failed" << endl;
-        cerr << e.get_message() << endl;
-        utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
-    }
-    log << "Starting search: " << engine->get_description() << endl;
-    return engine;
-}
 
 shared_ptr<SearchEngine> IteratedSearch::create_current_phase() {
 
-    int num_phases = engine_configs.size();
+    int num_phases = engines.size();
 
     if (phase >= num_phases) {
         /* We've gone through all searches. We continue if
@@ -78,15 +64,14 @@ shared_ptr<SearchEngine> IteratedSearch::create_current_phase() {
            this overrides continue_on_fail.
         */
         if (repeat_last_phase && last_phase_found_solution) {
-            auto x1 = get_search_engine(engine_configs.size() - 1);
-            auto ret1 = x1->create_task_specific_SearchEngine(task,1);
-            return ret1;
+            log << "Starting search: " << engines[engines.size() - 1] -> get_description() << endl;
+            return engines[engines.size() - 1]->create_task_specific_SearchEngine(task, 1);
         } else {
             return nullptr;
         }
     }
-
-    return get_search_engine(phase)->create_task_specific_SearchEngine(task, 1);
+    log << "Starting search: " << engines[phase] -> get_description() << endl;
+    return engines[phase]->create_task_specific_SearchEngine(task, 1);
 }
 
 SearchStatus IteratedSearch::step() {
@@ -166,7 +151,7 @@ TaskIndependentIteratedSearch::TaskIndependentIteratedSearch(utils::Verbosity ve
                                                              double max_time,
                                                              int bound,
                                                              string unparsed_config,
-                                                             vector<parser::LazyValue> engine_configs,
+                                                             vector<shared_ptr<TaskIndependentSearchEngine>> engines,
                                                              bool pass_bound,
                                                              bool repeat_last_phase,
                                                              bool continue_on_fail,
@@ -177,7 +162,7 @@ TaskIndependentIteratedSearch::TaskIndependentIteratedSearch(utils::Verbosity ve
                                       max_time,
                                       bound,
                                       unparsed_config),
-          engine_configs(engine_configs),
+          engines(engines),
           pass_bound(pass_bound),
           repeat_last_phase(repeat_last_phase),
           continue_on_fail(continue_on_fail),
@@ -202,7 +187,7 @@ shared_ptr<IteratedSearch> TaskIndependentIteratedSearch::create_task_specific_I
                 max_time,
                 bound,
                 task,
-                engine_configs,
+                engines,
                 pass_bound,
                 repeat_last_phase,
                 continue_on_fail,
@@ -236,10 +221,9 @@ public:
         document_synopsis("");
 
         add_list_option<shared_ptr<TaskIndependentSearchEngine>>(
-            "engine_configs",
+            "engines",
             "list of search engines for each phase",
-            "",
-            true);
+            "");
         add_option<bool>(
             "pass_bound",
             "use bound from previous search. The bound is the real cost "
@@ -287,6 +271,7 @@ public:
     }
 
     virtual shared_ptr<TaskIndependentIteratedSearch> create_component(const plugins::Options &opts, const utils::Context &context) const override {
+        cout << "in : TaskIndependentIteratedSearchFeature::create_component(const plugins::Options &opts, const utils::Context &context)" << endl;
         plugins::Options options_copy(opts);
         /*
           The options entry 'engine_configs' is a LazyValue representing a list
@@ -299,17 +284,13 @@ public:
           search engines. Then we no longer need to be lazy because creating
           the builder is a light-weight operation.
         */
-        vector<parser::LazyValue> engine_configs =
-            opts.get<parser::LazyValue>("engine_configs").construct_lazy_list();
-        options_copy.set("engine_configs", engine_configs);
-        plugins::verify_list_non_empty<parser::LazyValue>(context, options_copy, "engine_configs");
 
         return make_shared<TaskIndependentIteratedSearch>(opts.get<utils::Verbosity>("verbosity"),
                                            opts.get<OperatorCost>("cost_type"),
                                            opts.get<double>("max_time"),
                                                    opts.get<int>("bound"),
                                            opts.get_unparsed_config(),
-                                           opts.get<parser::LazyValue>("engine_configs").construct_lazy_list(),
+                                           opts.get_list<shared_ptr<TaskIndependentSearchEngine>>("engines"),
                                            opts.get<bool>("pass_bound"),
                                            opts.get<bool>("repeat_last"),
                                            opts.get<bool>("continue_on_fail"),
