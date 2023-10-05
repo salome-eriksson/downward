@@ -10,6 +10,7 @@
 
 namespace iterated_search {
 class IteratedSearch : public SearchEngine {
+    std::unique_ptr<ComponentMap> component_map;
     std::vector<std::shared_ptr<TaskIndependentSearchEngine>> engines;
 
     bool pass_bound;
@@ -34,6 +35,7 @@ public:
                    double max_time,
                    int bound,
                    const std::shared_ptr<AbstractTask> &task,
+                   std::unique_ptr<ComponentMap> &&component_map,
                    std::vector<std::shared_ptr<TaskIndependentSearchEngine>> engines,
                    bool pass_bound,
                    bool repeat_last_phase,
@@ -43,6 +45,7 @@ public:
 
     virtual void save_plan_if_necessary() override;
     virtual void print_statistics() const override;
+
 };
 
 
@@ -69,10 +72,10 @@ public:
 
     virtual std::shared_ptr<SearchEngine> create_task_specific_SearchEngine(
             const std::shared_ptr<AbstractTask> &task,
-            std::shared_ptr<ComponentMap> &component_map, int depth = -1) override;
+            std::unique_ptr<ComponentMap> &component_map, int depth = -1) override;
 
     virtual std::shared_ptr<IteratedSearch> create_task_specific_IteratedSearch(const std::shared_ptr<AbstractTask> &task, int depth = -1);
-    virtual std::shared_ptr<IteratedSearch> create_task_specific_IteratedSearch(const std::shared_ptr<AbstractTask> &task, std::shared_ptr<ComponentMap> &component_map, int depth = -1);
+    virtual std::shared_ptr<IteratedSearch> create_task_specific_IteratedSearch(const std::shared_ptr<AbstractTask> &task, std::unique_ptr<ComponentMap> &&component_map, int depth = -1);
 
     virtual ~TaskIndependentIteratedSearch()  override;
 };
