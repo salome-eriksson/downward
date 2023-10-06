@@ -219,21 +219,10 @@ TaskIndependentSearchEngine::TaskIndependentSearchEngine(utils::Verbosity verbos
 TaskIndependentSearchEngine::~TaskIndependentSearchEngine() {
 }
 
-shared_ptr<SearchEngine> TaskIndependentSearchEngine::create_task_specific_SearchEngine(const shared_ptr<AbstractTask> &task, int depth) {
+shared_ptr<SearchEngine> TaskIndependentSearchEngine::create_task_specific_root(const shared_ptr<AbstractTask> &task, int depth) {
     utils::g_log << std::string(depth, ' ') << "Creating SearchEngine as root component..." << endl;
     std::unique_ptr<ComponentMap> component_map = std::make_unique<ComponentMap>();
-    return create_task_specific_SearchEngine(task, component_map, depth);
-}
-
-shared_ptr<SearchEngine> TaskIndependentSearchEngine::create_task_specific_SearchEngine([[maybe_unused]] const shared_ptr<AbstractTask> &task, [[maybe_unused]] unique_ptr<ComponentMap> &component_map, [[maybe_unused]] int depth) {
-    cerr << std::string(depth, ' ') << "Tries to create SearchEngine in an unimplemented way." << endl;
-    utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
-}
-
-
-shared_ptr<Component> TaskIndependentSearchEngine::create_task_specific_Component(const shared_ptr<AbstractTask> &task, unique_ptr<ComponentMap> &component_map, int depth) {
-    shared_ptr<SearchEngine> x = create_task_specific_SearchEngine(task, component_map, depth);
-    return static_pointer_cast<Component>(x);
+    return create_task_specific(task, component_map, depth);
 }
 
 

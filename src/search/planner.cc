@@ -33,7 +33,7 @@ int main(int argc, const char **argv) {
     utils::g_log << "Start creating task independent Components..." << endl;
     shared_ptr<TaskIndependentSearchEngine> ti_engine = parse_cmd_line(argc, argv, unit_cost);
     utils::g_log << "Start creating task specific Components..." << endl;
-    shared_ptr<SearchEngine> engine = ti_engine->create_task_specific_SearchEngine(tasks::g_root_task, 0);
+    shared_ptr<SearchEngine> engine = ti_engine->create_task_specific_root(tasks::g_root_task, 0);
 
     utils::g_log << "Start search timer..." << endl;
 
