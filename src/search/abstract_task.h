@@ -1,6 +1,7 @@
 #ifndef ABSTRACT_TASK_H
 #define ABSTRACT_TASK_H
 
+#include "component.h"
 #include "operator_id.h"
 
 #include "algorithms/subscriber.h"
@@ -48,7 +49,7 @@ inline void feed(HashState &hash_state, const FactPair &fact) {
 }
 }
 
-class AbstractTask : public subscriber::SubscriberService<AbstractTask> {
+class AbstractTask : public subscriber::SubscriberService<AbstractTask>, public Component {
 public:
     AbstractTask() = default;
     virtual ~AbstractTask() override = default;
@@ -101,6 +102,16 @@ public:
     virtual void convert_ancestor_state_values(
         std::vector<int> &values,
         const AbstractTask *ancestor_task) const = 0;
+};
+
+class TaskIndependentAbstractTask : public TaskIndependentComponent {
+public:
+    explicit TaskIndependentAbstractTask();
+    virtual ~TaskIndependentAbstractTask() override = default;
+
+    virtual std::shared_ptr<AbstractTask>
+    create_task_specific(const std::shared_ptr<AbstractTask> &task, std::unique_ptr<ComponentMap> &component_map,
+                         int depth = -1);
 };
 
 #endif

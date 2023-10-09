@@ -15,9 +15,22 @@ ostream &operator<<(ostream &os, const FactPair &fact_pair) {
     return os;
 }
 
-static class AbstractTaskCategoryPlugin : public plugins::TypedCategoryPlugin<AbstractTask> {
+
+TaskIndependentAbstractTask::TaskIndependentAbstractTask() {
+}
+
+
+shared_ptr<AbstractTask> TaskIndependentAbstractTask::create_task_specific(
+        [[maybe_unused]] const shared_ptr<AbstractTask> &task,
+        [[maybe_unused]] unique_ptr<ComponentMap> &component_map,
+        [[maybe_unused]] int depth) {
+    cerr << "Tries to create AbstractTask in an unimplemented way." << endl;
+    utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
+}
+
+static class TaskIndependentAbstractTaskCategoryPlugin : public plugins::TypedCategoryPlugin<TaskIndependentAbstractTask> {
 public:
-    AbstractTaskCategoryPlugin() : TypedCategoryPlugin("AbstractTask") {
+    TaskIndependentAbstractTaskCategoryPlugin() : TypedCategoryPlugin("TI_AbstractTask") {
         // TODO: Replace empty string by synopsis for the wiki page.
         document_synopsis("");
     }

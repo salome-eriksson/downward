@@ -10,7 +10,8 @@
 
 namespace iterated_search {
 class IteratedSearch : public SearchEngine {
-    std::vector<parser::LazyValue> engine_configs;
+    std::unique_ptr<ComponentMap> component_map;
+    std::vector<std::shared_ptr<TaskIndependentSearchEngine>> engines;
 
     bool pass_bound;
     bool repeat_last_phase;
@@ -22,17 +23,61 @@ class IteratedSearch : public SearchEngine {
     int best_bound;
     bool iterated_found_solution;
 
-    std::shared_ptr<SearchEngine> get_search_engine(int engine_configs_index);
+    std::shared_ptr<TaskIndependentSearchEngine> get_search_engine(int engine_configs_index);
     std::shared_ptr<SearchEngine> create_current_phase();
     SearchStatus step_return_value();
 
     virtual SearchStatus step() override;
 
 public:
-    IteratedSearch(const plugins::Options &opts);
+    IteratedSearch(utils::Verbosity verbosity,
+                   OperatorCost cost_type,
+                   double max_time,
+                   int bound,
+                   const std::shared_ptr<AbstractTask> &task,
+                   std::unique_ptr<ComponentMap> &&component_map,
+                   std::vector<std::shared_ptr<TaskIndependentSearchEngine>> engines,
+                   bool pass_bound,
+                   bool repeat_last_phase,
+                   bool continue_on_fail,
+                   bool continue_on_solve,
+                   std::string unparsed_config = std::string());
 
     virtual void save_plan_if_necessary() override;
     virtual void print_statistics() const override;
+};
+
+
+
+class TaskIndependentIteratedSearch : public TaskIndependentSearchEngine {
+private:
+    std::vector<std::shared_ptr<TaskIndependentSearchEngine>> engines;
+
+    bool pass_bound;
+    bool repeat_last_phase;
+    bool continue_on_fail;
+    bool continue_on_solve;
+
+    std::shared_ptr<IteratedSearch> create_task_specific_IteratedSearch(const std::shared_ptr<AbstractTask> &task, std::unique_ptr<ComponentMap> &&component_map, int depth = -1);
+public:
+    explicit TaskIndependentIteratedSearch(utils::Verbosity verbosity,
+                                           OperatorCost cost_type,
+                                           double max_time,
+                                           int bound,
+                                           std::string unparsed_config,
+                                           std::vector<std::shared_ptr<TaskIndependentSearchEngine>> engines,
+                                           bool pass_bound,
+                                           bool repeat_last_phase,
+                                           bool continue_on_fail,
+                                           bool continue_on_solve);
+
+    virtual ~TaskIndependentIteratedSearch()  override;
+
+    std::shared_ptr<SearchEngine> create_task_specific_root(const std::shared_ptr<AbstractTask> &task, int depth = -1) override;
+
+    std::shared_ptr<SearchEngine>
+    create_task_specific(const std::shared_ptr<AbstractTask> &task, std::unique_ptr<ComponentMap> &component_map,
+                         int depth = -1 ) override;
 };
 }
 

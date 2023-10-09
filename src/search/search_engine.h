@@ -1,6 +1,8 @@
 #ifndef SEARCH_ENGINE_H
 #define SEARCH_ENGINE_H
 
+#include "abstract_task.h"
+#include "component.h"
 #include "operator_cost.h"
 #include "operator_id.h"
 #include "plan_manager.h"
@@ -15,7 +17,6 @@
 #include <vector>
 
 namespace plugins {
-class Options;
 class Feature;
 }
 
@@ -30,7 +31,7 @@ class SuccessorGenerator;
 
 enum SearchStatus {IN_PROGRESS, TIMEOUT, FAILED, SOLVED};
 
-class SearchEngine {
+class SearchEngine : public Component {
     std::string description;
     SearchStatus status;
     bool solution_found;
@@ -60,7 +61,12 @@ protected:
     bool check_goal_and_set_plan(const State &state);
     int get_adjusted_cost(const OperatorProxy &op) const;
 public:
-    SearchEngine(const plugins::Options &opts);
+    SearchEngine(utils::Verbosity verbosity,
+                 OperatorCost cost_type,
+                 double max_time,
+                 int bound,
+                 std::string unparsed_config,
+                 const std::shared_ptr<AbstractTask> task);
     virtual ~SearchEngine();
     virtual void print_statistics() const = 0;
     virtual void save_plan_if_necessary();
@@ -79,6 +85,39 @@ public:
     static void add_pruning_option(plugins::Feature &feature);
     static void add_options_to_feature(plugins::Feature &feature);
     static void add_succ_order_options(plugins::Feature &feature);
+};
+
+class TaskIndependentSearchEngine : public TaskIndependentComponent {
+    std::string description;
+    SearchStatus status;
+    bool solution_found;
+    Plan plan;
+protected:
+
+    mutable utils::Verbosity verbosity;
+    PlanManager plan_manager;
+    SearchProgress search_progress;
+    int bound;
+    OperatorCost cost_type;
+    bool is_unit_cost;
+    double max_time;
+
+public:
+    TaskIndependentSearchEngine(utils::Verbosity verbosity,
+                                OperatorCost cost_type,
+                                double max_time,
+                                int bound,
+                                std::string unparsed_config);
+    virtual ~TaskIndependentSearchEngine();
+
+    PlanManager &get_plan_manager() {return plan_manager;}
+    std::string get_description() {return description;}
+
+    virtual std::shared_ptr<SearchEngine> create_task_specific_root(const std::shared_ptr<AbstractTask> &task, int depth = -1);
+
+    virtual std::shared_ptr<SearchEngine>
+    create_task_specific(const std::shared_ptr<AbstractTask> &task, std::unique_ptr<ComponentMap> &component_map,
+                         int depth = -1) = 0;
 };
 
 /*

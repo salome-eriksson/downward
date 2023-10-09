@@ -1,6 +1,8 @@
 #ifndef EVALUATOR_H
 #define EVALUATOR_H
 
+#include "abstract_task.h"
+#include "component.h"
 #include "evaluation_result.h"
 
 #include "utils/logging.h"
@@ -14,7 +16,7 @@ namespace plugins {
 class Options;
 }
 
-class Evaluator {
+class Evaluator : public Component {
     const std::string description;
     const bool use_for_reporting_minima;
     const bool use_for_boosting;
@@ -28,11 +30,11 @@ public:
         bool use_for_boosting = false,
         bool use_for_counting_evaluations = false);
     explicit Evaluator(
-        const std::basic_string<char> unparsed_config,
-        bool use_for_reporting_minima,
-        bool use_for_boosting,
-        bool use_for_counting_evaluations,
-        utils::LogProxy log);
+        utils::LogProxy log,
+        const std::basic_string<char> unparsed_config = std::string(),
+        bool use_for_reporting_minima = false,
+        bool use_for_boosting = false,
+        bool use_for_counting_evaluations = false);
     virtual ~Evaluator() = default;
 
     /*
@@ -105,6 +107,28 @@ public:
     */
     virtual int get_cached_estimate(const State &state) const;
 };
+
+class TaskIndependentEvaluator : public TaskIndependentComponent {
+    const std::string description;
+    const bool use_for_reporting_minima;
+    const bool use_for_boosting;
+    const bool use_for_counting_evaluations;
+protected:
+    mutable utils::LogProxy log;
+public:
+    explicit TaskIndependentEvaluator(
+        utils::LogProxy log,
+        const std::string unparsed_config = std::string(),
+        bool use_for_reporting_minima = false,
+        bool use_for_boosting = false,
+        bool use_for_counting_evaluations = false);
+    virtual ~TaskIndependentEvaluator() = default;
+
+    virtual std::shared_ptr<Evaluator>
+    create_task_specific(const std::shared_ptr<AbstractTask> &task, std::unique_ptr<ComponentMap> &component_map,
+                         int depth = -1) = 0;
+};
+
 
 extern void add_evaluator_options_to_feature(plugins::Feature &feature);
 

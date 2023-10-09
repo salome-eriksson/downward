@@ -38,6 +38,15 @@ LogProxy get_log_from_options(const plugins::Options &options) {
     return LogProxy(make_shared<Log>(options.get<Verbosity>("verbosity")));
 }
 
+LogProxy get_log_from_verbosity(const Verbosity &verbosity) {
+    /* NOTE: We return (a proxy to) the global log if all options match the
+       default values of the global log. */
+    if (verbosity == Verbosity::NORMAL) {
+        return LogProxy(global_log);
+    }
+    return LogProxy(make_shared<Log>(verbosity));
+}
+
 LogProxy get_silent_log() {
     plugins::Options opts;
     opts.set<utils::Verbosity>("verbosity", utils::Verbosity::SILENT);
@@ -51,12 +60,11 @@ ContextError::ContextError(const string &msg)
 const string Context::INDENT = "  ";
 
 Context::Context(const Context &context)
-    : initial_stack_size(context.block_stack.size()),
-      block_stack(context.block_stack) {
+    : block_stack(context.block_stack) {
 }
 
 Context::~Context() {
-    if (block_stack.size() > initial_stack_size) {
+    if (block_stack.size() > 0) {
         cerr << str() << endl;
         ABORT("A context was destructed with an non-empty stack.");
     }

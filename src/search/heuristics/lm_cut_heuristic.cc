@@ -2,12 +2,8 @@
 
 #include "lm_cut_landmarks.h"
 
-#include "../task_proxy.h"
-
+#include "../tasks/cost_adapted_task.h"
 #include "../plugins/plugin.h"
-#include "../task_utils/task_properties.h"
-#include "../utils/logging.h"
-#include "../utils/memory.h"
 
 #include <iostream>
 
@@ -17,7 +13,7 @@ namespace lm_cut_heuristic {
 LandmarkCutHeuristic::LandmarkCutHeuristic(basic_string<char> unparsed_config,
                                            utils::LogProxy log,
                                            bool cache_evaluator_values,
-                                           shared_ptr<AbstractTask> task)
+                                           const shared_ptr<AbstractTask> task)
     : Heuristic(unparsed_config, log, cache_evaluator_values, task),
       landmark_generator(utils::make_unique_ptr<LandmarkCutLandmarks>(task_proxy)) {
     if (log.is_at_least_normal()) {
@@ -41,7 +37,37 @@ int LandmarkCutHeuristic::compute_heuristic(const State &ancestor_state) {
     return total_cost;
 }
 
-class LandmarkCutHeuristicFeature : public plugins::TypedFeature<Evaluator, LandmarkCutHeuristic> {
+
+
+TaskIndependentLandmarkCutHeuristic::TaskIndependentLandmarkCutHeuristic(string unparsed_config, utils::LogProxy log, bool cache_evaluator_values, shared_ptr<TaskIndependentAbstractTask> task_transformation)
+    : TaskIndependentHeuristic(unparsed_config, log, cache_evaluator_values, task_transformation),
+      log(log) {
+}
+
+TaskIndependentLandmarkCutHeuristic::~TaskIndependentLandmarkCutHeuristic() {
+}
+
+
+shared_ptr<Evaluator> TaskIndependentLandmarkCutHeuristic::create_task_specific(const shared_ptr<AbstractTask> &task, std::unique_ptr<ComponentMap> &component_map, int depth) {
+    shared_ptr<LandmarkCutHeuristic> task_specific_x;
+    if (component_map->count( static_cast<TaskIndependentComponent *>(this))) {
+        log << std::string(depth, ' ') << "Reusing task specific LandmarkCutHeuristic..." << endl;
+        task_specific_x = dynamic_pointer_cast<LandmarkCutHeuristic>(
+            component_map->at(static_cast<TaskIndependentComponent *>(this)));
+    } else {
+        log << std::string(depth, ' ') << "Creating task specific LandmarkCutHeuristic..." << endl;
+
+        task_specific_x = make_shared<LandmarkCutHeuristic>(unparsed_config,
+                                                            log,
+                                                            cache_evaluator_values,
+                                                            task_transformation->create_task_specific(task, component_map, depth >= 0 ? depth + 1 : depth));
+        component_map->insert(make_pair<TaskIndependentComponent *, std::shared_ptr<Component>>(static_cast<TaskIndependentComponent *>(this), task_specific_x));
+    }
+    return task_specific_x;
+}
+
+
+class LandmarkCutHeuristicFeature : public plugins::TypedFeature<TaskIndependentEvaluator, TaskIndependentLandmarkCutHeuristic> {
 public:
     LandmarkCutHeuristicFeature() : TypedFeature("lmcut") {
         document_title("Landmark-cut heuristic");
@@ -58,12 +84,13 @@ public:
         document_property("preferred operators", "no");
     }
 
-    virtual shared_ptr<LandmarkCutHeuristic> create_component(
-            const plugins::Options &opts, const utils::Context &) const override {
-        return make_shared<LandmarkCutHeuristic>(opts.get_unparsed_config(),
-                                                 utils::get_log_from_options(opts),
-                                                 opts.get<bool>("cache_estimates"),
-                                                 opts.get<shared_ptr<AbstractTask>>("transform"));
+    virtual shared_ptr<TaskIndependentLandmarkCutHeuristic> create_component(
+        const plugins::Options &opts, const utils::Context &) const override {
+        return make_shared<TaskIndependentLandmarkCutHeuristic>(opts.get_unparsed_config(),
+                                                                utils::get_log_from_options(opts),
+                                                                opts.get<bool>("cache_estimates"),
+                                                                opts.get<shared_ptr<TaskIndependentAbstractTask>>("transform")
+                                                                );
     }
 };
 

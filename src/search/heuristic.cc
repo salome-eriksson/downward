@@ -9,27 +9,18 @@
 #include "tasks/root_task.h"
 
 #include <cassert>
-#include <cstdlib>
-#include <limits>
 
 using namespace std;
 
-Heuristic::Heuristic(const plugins::Options &opts)
-    : Evaluator(opts, true, true, true),
-      heuristic_cache(HEntry(NO_VALUE, true)), //TODO: is true really a good idea here?
-      cache_evaluator_values(opts.get<bool>("cache_estimates")),
-      task(opts.get<shared_ptr<AbstractTask>>("transform")),
-      task_proxy(*task) {
-}
 
 Heuristic::Heuristic(const std::basic_string<char> unparsed_config,
                      utils::LogProxy log,
                      bool cache_evaluator_values,
-                     shared_ptr<AbstractTask> task)
-   : Evaluator(unparsed_config, true, true, true, log),
-     heuristic_cache(HEntry(NO_VALUE, true)), //TODO: is true really a good idea here?
-     cache_evaluator_values(cache_evaluator_values),
-     task(task), task_proxy(*task) {
+                     const shared_ptr<AbstractTask> task)
+    : Evaluator(log, unparsed_config, true, true, true),
+      heuristic_cache(HEntry(NO_VALUE, true)), //TODO: is true really a good idea here?
+      cache_evaluator_values(cache_evaluator_values),
+      task(task), task_proxy(*task) {
 }
 
 
@@ -45,12 +36,13 @@ State Heuristic::convert_ancestor_state(const State &ancestor_state) const {
 }
 
 void Heuristic::add_options_to_feature(plugins::Feature &feature) {
+    cout << "Heuristic::add_options_to_feature(plugins::Feature &feature) " << endl;
     add_evaluator_options_to_feature(feature);
-    feature.add_option<shared_ptr<AbstractTask>>(
+    feature.add_option<shared_ptr<TaskIndependentAbstractTask>>(
         "transform",
         "Optional task transformation for the heuristic."
         " Currently, adapt_costs() and no_transform() are available.",
-        "no_transform()");
+        "adapt_costs(normal)"); // TODO: issue559 put default value back to 'no_transform()'.
     feature.add_option<bool>("cache_estimates", "cache heuristic estimates", "true");
 }
 
@@ -118,3 +110,14 @@ int Heuristic::get_cached_estimate(const State &state) const {
     assert(is_estimate_cached(state));
     return heuristic_cache[state].h;
 }
+
+TaskIndependentHeuristic::TaskIndependentHeuristic(const string unparsed_config,
+                                                   utils::LogProxy log,
+                                                   bool cache_evaluator_values,
+                                                   std::shared_ptr<TaskIndependentAbstractTask> task_transformation
+                                                   )
+    : TaskIndependentEvaluator(log, unparsed_config, true, true, true),
+      cache_evaluator_values(cache_evaluator_values), task_transformation(task_transformation) {
+}
+
+

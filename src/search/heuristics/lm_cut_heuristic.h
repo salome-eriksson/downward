@@ -5,9 +5,6 @@
 
 #include <memory>
 
-namespace plugins {
-class Options;
-}
 
 namespace lm_cut_heuristic {
 class LandmarkCutLandmarks;
@@ -20,8 +17,26 @@ public:
     explicit LandmarkCutHeuristic(std::basic_string<char> unparsed_config,
                                   utils::LogProxy log,
                                   bool cache_evaluator_values,
-                                  std::shared_ptr<AbstractTask> task);
+                                  const std::shared_ptr<AbstractTask> task);
     virtual ~LandmarkCutHeuristic() override;
+};
+
+class TaskIndependentLandmarkCutHeuristic : public TaskIndependentHeuristic {
+private:
+    std::string unparsed_config;
+    utils::LogProxy log;
+    bool cache_evaluator_values;
+public:
+    explicit TaskIndependentLandmarkCutHeuristic(std::string unparsed_config,
+                                                 utils::LogProxy log,
+                                                 bool cache_evaluator_values,
+                                                 std::shared_ptr<TaskIndependentAbstractTask> task_transformation);
+
+    virtual ~TaskIndependentLandmarkCutHeuristic()  override;
+
+    std::shared_ptr<Evaluator>
+    create_task_specific(const std::shared_ptr<AbstractTask> &task, std::unique_ptr<ComponentMap> &component_map,
+                         int depth = -1 ) override;
 };
 }
 
