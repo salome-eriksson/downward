@@ -266,26 +266,6 @@ void LandmarkFactoryRpgSasp::compute_shared_preconditions(
     }
 }
 
-static string get_predicate_for_fact(const VariablesProxy &variables,
-                                     int var_no, int value) {
-    const string fact_name = variables[var_no].get_fact(value).get_name();
-    if (fact_name == "<none of those>")
-        return "";
-    int predicate_pos = 0;
-    if (fact_name.substr(0, 5) == "Atom ") {
-        predicate_pos = 5;
-    } else if (fact_name.substr(0, 12) == "NegatedAtom ") {
-        predicate_pos = 12;
-    }
-    size_t paren_pos = fact_name.find('(', predicate_pos);
-    if (predicate_pos == 0 || paren_pos == string::npos) {
-        cerr << "error: cannot extract predicate from fact: "
-             << fact_name << endl;
-        utils::exit_with(ExitCode::SEARCH_INPUT_ERROR);
-    }
-    return string(fact_name.begin() + predicate_pos, fact_name.begin() + paren_pos);
-}
-
 void LandmarkFactoryRpgSasp::build_disjunction_classes(const TaskProxy &task_proxy) {
     /* The RHW landmark generation method only allows disjunctive
        landmarks where all atoms stem from the same PDDL predicate.
@@ -306,10 +286,9 @@ void LandmarkFactoryRpgSasp::build_disjunction_classes(const TaskProxy &task_pro
        where the finite-domain representation comes from. (But of
        course making such a change would require a performance
        evaluation.)
-    */
 
-    typedef map<string, int> PredicateIndex;
-    PredicateIndex predicate_to_index;
+       TODO: update comment
+    */
 
     VariablesProxy variables = task_proxy.get_variables();
     disjunction_classes.resize(variables.size());
@@ -317,16 +296,7 @@ void LandmarkFactoryRpgSasp::build_disjunction_classes(const TaskProxy &task_pro
         int num_values = var.get_domain_size();
         disjunction_classes[var.get_id()].reserve(num_values);
         for (int value = 0; value < num_values; ++value) {
-            string predicate = get_predicate_for_fact(variables, var.get_id(), value);
-            int disj_class;
-            if (predicate.empty()) {
-                disj_class = -1;
-            } else {
-                // Insert predicate into unordered_map or extract value that
-                // is already there.
-                pair<string, int> entry(predicate, predicate_to_index.size());
-                disj_class = predicate_to_index.insert(entry).first->second;
-            }
+            int disj_class = var.get_id();
             disjunction_classes[var.get_id()].push_back(disj_class);
         }
     }
